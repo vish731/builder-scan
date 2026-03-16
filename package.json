@@ -1,0 +1,13 @@
+{
+  "name": "builder-scan",
+  "version": "1.0.0",
+  "description": "AI agent that detects real builders in crypto",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
+}
