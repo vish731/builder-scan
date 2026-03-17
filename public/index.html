@@ -7,10 +7,35 @@
 
 <h1>BuilderScan 🔎</h1>
 
-<input type="text" placeholder="Enter GitHub username">
-<button>Scan Builder</button>
+<input id="username" type="text" placeholder="Enter GitHub username">
+<button onclick="scan()">Scan Builder</button>
 
-<p>Result will appear here</p>
+<h3 id="result"></h3>
+
+<h2>🔥 Live Builders</h2>
+<ul id="list"></ul>
+
+<script>
+async function scan() {
+  const username = document.getElementById("username").value;
+
+  const res = await fetch(`/scan?user=${username}`);
+  const data = await res.json();
+
+  document.getElementById("result").innerText =
+    username + " Score: " + data.score;
+
+  // update leaderboard
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+
+  data.builders.forEach(b => {
+    const li = document.createElement("li");
+    li.innerText = b.user + " → " + b.score;
+    list.appendChild(li);
+  });
+}
+</script>
 
 </body>
 </html>
