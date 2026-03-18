@@ -18,7 +18,10 @@ app.get("/scan", async (req, res) => {
     const followers = data.followers || 0;
 
   
-    const score = repos * 5 + followers * 2;
+    const rawScore =
+  repos * 8 + Math.log10(followers + 1) * 40;
+
+const score = Math.min(100, Math.floor(rawScore));
 
     builders.push({ user, score });
     builders.sort((a, b) => b.score - a.score);
