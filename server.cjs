@@ -3,26 +3,35 @@ const app = express();
 
 app.use(express.static("public"));
 
-// memory store (temporary)
 let builders = [];
 
-app.get("/scan", (req, res) => {
+app.get("/scan", async (req, res) => {
   const user = req.query.user;
 
-  // dummy score for now
-  const score = Math.floor(Math.random() * 100);
+  try {
+  
+    const response = await fetch(`https://api.github.com/users/${user}`);
+    const data = await response.json();
 
-  // store builder
-  builders.push({ user, score });
+    
+    const repos = data.public_repos || 0;
+    const followers = data.followers || 0;
 
-  // sort high to low
-  builders.sort((a, b) => b.score - a.score);
+  
+    const score = repos * 5 + followers * 2;
 
-  res.json({
-    user,
-    score,
-    builders
-  });
+    builders.push({ user, score });
+    builders.sort((a, b) => b.score - a.score);
+
+    res.json({
+      user,
+      score,
+      builders
+    });
+
+  } catch (err) {
+    res.json({ error: "User not found" });
+  }
 });
 
 app.listen(3000, () => {
