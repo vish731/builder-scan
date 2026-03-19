@@ -5,7 +5,6 @@ app.use(express.static("public"));
 
 let builders = [];
 
-// 👇 ADD THIS
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/public/index.html");
 });
