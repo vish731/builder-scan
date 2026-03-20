@@ -22,7 +22,7 @@ app.get("/scan", async (req, res) => {
     const goodRepos = reposData.filter(r =>
       r.description &&
       r.description.length > 5 &&
-      !r.
+      !r.fork
     );
 
     const activeRepos = goodRepos.filter(r => {
