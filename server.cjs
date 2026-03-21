@@ -51,24 +51,20 @@ const isSpamRepo = (repoName, description, files) => {
   const lowerName = repoName.toLowerCase();
   const lowerDesc = (description || '').toLowerCase();
   
-  // Check repo name for spam
   if (spamKeywords.some(keyword => lowerName.includes(keyword))) {
     return { isSpam: true, reason: 'Spam repo name' };
   }
   
-  // Check description
   if (lowerDesc && spamKeywords.some(keyword => lowerDesc.includes(keyword))) {
     return { isSpam: true, reason: 'Spam description' };
   }
   
-  // Check if repo has actual code files
   if (files && files.length > 0) {
     const hasRealCode = files.some(file => {
       const ext = path.extname(file.name).toLowerCase();
       const name = file.name.toLowerCase();
       const codeExtensions = ['.js', '.py', '.java', '.cpp', '.c', '.go', '.rs', '.ts', '.sol', '.rb', '.php', '.jsx', '.tsx', '.vue', '.swift', '.kt', '.cs'];
       
-      // Ignore README, LICENSE, .gitignore
       if (name.includes('readme') || name.includes('license') || name.includes('.gitignore')) {
         return false;
       }
@@ -86,10 +82,9 @@ const isSpamRepo = (repoName, description, files) => {
 
 // ============ DETECT SPAM COMMITS ============
 const isSpamCommit = (commitMessage) => {
-  const spamMessages = ['test', 'update', 'fix', 'wip', 'temp', 'demo', 'hello', 'hii', 'asd', '123', 'remove', 'delete', 'initial commit', 'first commit'];
+  const spamMessages = ['test', 'update', 'fix', 'wip', 'temp', 'demo', 'hello', 'hii', 'asd', '123', 'remove', 'delete', 'initial commit', 'first commit', 'Merge', 'merge'];
   const lowerMsg = commitMessage.toLowerCase();
   
-  // Check if commit message is spammy
   if (lowerMsg.length < 3) return true;
   if (spamMessages.some(spam => lowerMsg === spam)) return true;
   if (spamMessages.some(spam => lowerMsg.includes(spam) && lowerMsg.length < 10)) return true;
@@ -101,8 +96,13 @@ const isSpamCommit = (commitMessage) => {
 async function getMeaningfulCommits(username, repo) {
   try {
     const commitsRes = await axios.get(
-      `https://api.github.com/repos/${username}/${repo.name}/commits?author=${username}&per_page=100`,
-      { timeout: 10000 }
+      `https://api.github.com/repos/${username}/${repo.name}/commits?per_page=100`,
+      { 
+        timeout: 10000,
+        headers: {
+          'User-Agent': 'BuilderScan-App'
+        }
+      }
     );
     
     let meaningfulCommits = 0;
@@ -122,6 +122,7 @@ async function getMeaningfulCommits(username, repo) {
     return { meaningfulCommits, spamCommits, totalCommits: commitsRes.data.length };
     
   } catch (error) {
+    console.log(`    ⚠️ Could not fetch commits for ${repo.name}: ${error.message}`);
     return { meaningfulCommits: 0, spamCommits: 0, totalCommits: 0 };
   }
 }
@@ -131,7 +132,12 @@ async function analyzeRepoContent(username, repoName) {
   try {
     const contentsRes = await axios.get(
       `https://api.github.com/repos/${username}/${repoName}/contents`,
-      { timeout: 5000 }
+      { 
+        timeout: 5000,
+        headers: {
+          'User-Agent': 'BuilderScan-App'
+        }
+      }
     );
     
     const files = contentsRes.data;
@@ -144,7 +150,7 @@ async function analyzeRepoContent(username, repoName) {
       
       if (name.includes('readme') || name.includes('license')) {
         docFiles.push(file.name);
-      } else if (['.js', '.py', '.java', '.cpp', '.c', '.go', '.rs', '.ts', '.sol', '.rb', '.php', '.jsx', '.tsx', '.vue', '.swift', '.kt', '.cs', '.html', '.css'].includes(ext)) {
+      } else if (['.js', '.py', '.java', '.cpp', '.c', '.go', '.rs', '.ts', '.sol', '.rb', '.php', '.jsx', '.tsx', '.vue', '.swift', '.kt', '.cs', '.html', '.css', '.json'].includes(ext)) {
         codeFiles.push(file.name);
       }
     }
@@ -170,19 +176,20 @@ async function calculateBuilderScore(username, userData, repos) {
     totalSpamCommits: 0,
     stars: 0,
     forks: 0,
-    accountAge: 0,
-    recentActivity: 0
+    accountAge: 0
   };
   
   const repoAnalysis = [];
   
-  for (const repo of repos) {
-    if (repo.fork) continue; // Skip forks
+  // Limit to first 20 repos to avoid timeout
+  const reposToAnalyze = repos.slice(0, 20);
+  
+  for (const repo of reposToAnalyze) {
+    if (repo.fork) continue;
     
-    // Analyze repo content
+    console.log(`  📂 Analyzing: ${repo.name}`);
+    
     const content = await analyzeRepoContent(username, repo.name);
-    
-    // Check if spam repo
     const spamCheck = isSpamRepo(repo.name, repo.description, content.codeFiles);
     
     if (spamCheck.isSpam) {
@@ -195,7 +202,6 @@ async function calculateBuilderScore(username, userData, repos) {
       continue;
     }
     
-    // Get meaningful commits
     const commits = await getMeaningfulCommits(username, repo);
     
     if (commits.meaningfulCommits > 0 || content.hasCode) {
@@ -224,13 +230,10 @@ async function calculateBuilderScore(username, userData, repos) {
       });
     }
     
-    // Small delay to avoid rate limit
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise(resolve => setTimeout(resolve, 300));
   }
   
-  // ============ CALCULATE SCORE ============
-  
-  // 1. Code Repositories (Max 35 points)
+  // Calculate score
   let repoScore = 0;
   if (details.codeRepos >= 10) repoScore = 35;
   else if (details.codeRepos >= 7) repoScore = 30;
@@ -239,7 +242,6 @@ async function calculateBuilderScore(username, userData, repos) {
   else if (details.codeRepos >= 1) repoScore = 10;
   score += repoScore;
   
-  // 2. Meaningful Commits (Max 35 points)
   let commitScore = 0;
   if (details.totalMeaningfulCommits >= 500) commitScore = 35;
   else if (details.totalMeaningfulCommits >= 300) commitScore = 30;
@@ -250,7 +252,6 @@ async function calculateBuilderScore(username, userData, repos) {
   else if (details.totalMeaningfulCommits >= 5) commitScore = 5;
   score += commitScore;
   
-  // 3. Stars (Community Love) (Max 15 points)
   let starScore = 0;
   if (details.stars >= 100) starScore = 15;
   else if (details.stars >= 50) starScore = 12;
@@ -260,7 +261,6 @@ async function calculateBuilderScore(username, userData, repos) {
   else if (details.stars >= 1) starScore = 1;
   score += starScore;
   
-  // 4. Account Age (Max 10 points)
   const accountAgeDays = (Date.now() - new Date(userData.created_at)) / (1000 * 60 * 60 * 24);
   details.accountAge = accountAgeDays;
   let ageScore = 0;
@@ -271,14 +271,12 @@ async function calculateBuilderScore(username, userData, repos) {
   else if (accountAgeDays > 30) ageScore = 2;
   score += ageScore;
   
-  // 5. Spam Penalty (Max -15 points)
   let spamPenalty = Math.min(details.totalSpamCommits / 10, 15);
   if (details.codeRepos === 0 && details.totalMeaningfulCommits === 0) {
-    spamPenalty = 15; // Full penalty if no real activity
+    spamPenalty = 15;
   }
   score -= spamPenalty;
   
-  // Final score (0-100)
   score = Math.max(0, Math.min(Math.floor(score), 100));
   
   return {
@@ -303,24 +301,72 @@ app.get('/api/scan/:username', async (req, res) => {
     console.log(`\n🔍 SCANNING: @${username}`);
     console.log('═'.repeat(50));
     
-    // Get user data
-    const userRes = await axios.get(`https://api.github.com/users/${username}`);
+    // Check if username is valid
+    if (!username || username.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        error: 'Please enter a valid GitHub username'
+      });
+    }
+    
+    // Get user data with proper headers
+    const userRes = await axios.get(`https://api.github.com/users/${username}`, {
+      headers: {
+        'User-Agent': 'BuilderScan-App',
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+    
     const user = userRes.data;
     
-    // Get repositories
-    const reposRes = await axios.get(`https://api.github.com/users/${username}/repos?per_page=100&sort=updated`);
-    const allRepos = reposRes.data;
+    if (!user || !user.login) {
+      return res.status(404).json({
+        success: false,
+        error: `User "${username}" not found on GitHub`
+      });
+    }
     
-    console.log(`📁 Total repos: ${allRepos.length}`);
+    console.log(`👤 Found: ${user.name || user.login}`);
+    console.log(`📁 Public repos: ${user.public_repos}`);
+    
+    // Get repositories
+    const reposRes = await axios.get(`https://api.github.com/users/${username}/repos?per_page=100&sort=updated`, {
+      headers: {
+        'User-Agent': 'BuilderScan-App'
+      }
+    });
+    
+    const allRepos = reposRes.data;
+    console.log(`📦 Fetched ${allRepos.length} repositories`);
+    
+    if (allRepos.length === 0) {
+      return res.json({
+        success: true,
+        builder: {
+          username: user.login,
+          name: user.name || user.login,
+          avatar: user.avatar_url,
+          bio: user.bio || '',
+          builderScore: 0,
+          tier: getBuilderTier(0),
+          stats: {
+            codeRepos: 0,
+            totalMeaningfulCommits: 0,
+            totalSpamCommits: 0,
+            totalStars: 0,
+            accountAge: '0 months'
+          },
+          analysisMessage: "No public repositories found. Start building to increase your score!"
+        },
+        leaderboard: builders
+      });
+    }
+    
     console.log(`🔍 Analyzing each repo for real code...\n`);
     
-    // Calculate score
     const scoreData = await calculateBuilderScore(username, user, allRepos);
-    
-    // Get builder tier
     const tier = getBuilderTier(scoreData.score);
     
-    // Prepare response
     const builderProfile = {
       username: user.login,
       name: user.name || user.login,
@@ -331,11 +377,9 @@ app.get('/api/scan/:username', async (req, res) => {
       following: user.following,
       accountCreated: user.created_at,
       
-      // Score and Tier
       builderScore: scoreData.score,
       tier: tier,
       
-      // Stats
       stats: {
         codeRepos: scoreData.details.codeRepos,
         totalMeaningfulCommits: scoreData.details.totalMeaningfulCommits,
@@ -344,17 +388,12 @@ app.get('/api/scan/:username', async (req, res) => {
         accountAge: Math.floor(scoreData.details.accountAge / 30) + ' months'
       },
       
-      // Breakdown
       scoreBreakdown: scoreData.breakdown,
-      
-      // Repositories
       repositories: scoreData.repoAnalysis,
       
-      // Analysis message
       analysisMessage: getAnalysisMessage(scoreData.score, scoreData.details)
     };
     
-    // Store in leaderboard
     builders.unshift({
       username: user.login,
       score: scoreData.score,
@@ -367,7 +406,6 @@ app.get('/api/scan/:username', async (req, res) => {
     console.log(`🏆 TIER: ${tier.name}`);
     console.log(`📝 Valid repos: ${scoreData.details.codeRepos}`);
     console.log(`💻 Meaningful commits: ${scoreData.details.totalMeaningfulCommits}`);
-    console.log(`⚠️ Spam commits filtered: ${scoreData.details.totalSpamCommits}`);
     console.log('═'.repeat(50));
     
     res.json({
@@ -377,15 +415,27 @@ app.get('/api/scan/:username', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Error:', error.message);
-    res.status(404).json({
-      success: false,
-      error: error.response?.data?.message || 'User not found'
-    });
+    console.error('Error details:', error.response?.data || error.message);
+    
+    if (error.response?.status === 404) {
+      res.status(404).json({
+        success: false,
+        error: `User "${req.params.username}" not found on GitHub. Please check the username and try again.`
+      });
+    } else if (error.response?.status === 403) {
+      res.status(429).json({
+        success: false,
+        error: 'GitHub API rate limit exceeded. Please wait a minute and try again.'
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: error.response?.data?.message || error.message || 'Failed to fetch user data'
+      });
+    }
   }
 });
 
-// Helper function for analysis message
 function getAnalysisMessage(score, details) {
   if (score >= 75) {
     return `🎉 Exceptional developer! ${details.codeRepos} high-quality repos with ${details.totalMeaningfulCommits} meaningful commits. Community loves your work (${details.stars} stars)!`;
@@ -398,24 +448,42 @@ function getAnalysisMessage(score, details) {
   }
 }
 
-// Leaderboard endpoint
 app.get('/api/leaderboard', (req, res) => {
   res.json({ success: true, builders });
 });
 
-// Serve frontend
+app.get('/api/test/:username', async (req, res) => {
+  const { username } = req.params;
+  
+  try {
+    const response = await axios.get(`https://api.github.com/users/${username}`, {
+      headers: { 'User-Agent': 'BuilderScan-App' }
+    });
+    
+    res.json({
+      success: true,
+      user: response.data,
+      message: `✅ User "${username}" exists on GitHub!`
+    });
+  } catch (error) {
+    res.json({
+      success: false,
+      error: `❌ User "${username}" not found on GitHub`
+    });
+  }
+});
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Start server
 app.listen(PORT, () => {
   console.log(`
   ═══════════════════════════════════════════
   🏗️  BUILDER SCAN AGENT (Like BaseName)
   ═══════════════════════════════════════════
   📡 Server: http://localhost:${PORT}
-  🔍 Scan: http://localhost:${PORT}/api/scan/username
+  🔍 Test a user: http://localhost:${PORT}/api/test/username
   ═══════════════════════════════════════════
   `);
 });
