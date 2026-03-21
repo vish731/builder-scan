@@ -1,13 +1,18 @@
 {
   "name": "builder-scan",
-  "version": "1.0.0",
-  "description": "AI agent that detects real builders in crypto",
-  "main": "src/index.js",
-  "type": "module",
+  "version": "2.0.0",
+  "description": "AI agent that detects real builders in crypto and GitHub",
+  "main": "server.cjs",
   "scripts": {
-    "start": "node src/index.js"
+    "start": "node server.cjs",
+    "dev": "nodemon server.cjs"
   },
   "dependencies": {
-    "axios": "^1.6.0"
+    "express": "^4.18.2",
+    "axios": "^1.6.0",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
   }
 }
