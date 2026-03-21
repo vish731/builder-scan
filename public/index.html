@@ -50,7 +50,6 @@
     .input-group {
       display: flex;
       gap: 15px;
-      margin-bottom: 20px;
     }
     
     input {
@@ -82,15 +81,12 @@
       transform: translateY(-2px);
     }
     
-    button:active {
-      transform: translateY(0);
-    }
-    
     .loading {
       text-align: center;
       padding: 20px;
       font-size: 1.2rem;
       color: #667eea;
+      margin-top: 20px;
     }
     
     .result-card {
@@ -143,85 +139,80 @@
       margin-bottom: 10px;
     }
     
-    .score-section {
-      display: flex;
-      gap: 20px;
-      margin-bottom: 30px;
+    .badge {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      margin-top: 10px;
+    }
+    
+    .real-builder {
+      background: #00b894;
+      color: white;
+    }
+    
+    .fake-builder {
+      background: #ff4757;
+      color: white;
     }
     
     .score-card {
-      flex: 1;
-      text-align: center;
-      padding: 20px;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
+      padding: 20px;
       border-radius: 15px;
+      text-align: center;
+      margin-bottom: 20px;
     }
     
     .score-number {
-      font-size: 3rem;
+      font-size: 4rem;
       font-weight: bold;
-    }
-    
-    .spammer-badge {
-      background: #ff4757;
-      color: white;
-      padding: 5px 10px;
-      border-radius: 5px;
-      display: inline-block;
-      margin-top: 10px;
-    }
-    
-    .real-builder-badge {
-      background: #00b894;
-      color: white;
-      padding: 5px 10px;
-      border-radius: 5px;
-      display: inline-block;
-      margin-top: 10px;
     }
     
     .metrics-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
-      margin-bottom: 30px;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
     }
     
     .metric-card {
       background: #f8f9fa;
       padding: 15px;
       border-radius: 10px;
-      border-left: 4px solid #667eea;
-    }
-    
-    .metric-title {
-      font-weight: bold;
-      margin-bottom: 5px;
-      color: #333;
+      text-align: center;
     }
     
     .metric-value {
-      font-size: 1.5rem;
+      font-size: 1.8rem;
       font-weight: bold;
       color: #667eea;
     }
     
-    .warning-list {
-      background: #fff3cd;
-      border-left: 4px solid #ffc107;
+    .reasons-list {
+      background: #e8f5e9;
       padding: 15px;
       border-radius: 10px;
-      margin-top: 20px;
+      margin: 20px 0;
     }
     
-    .warning-list h4 {
-      margin-bottom: 10px;
-      color: #856404;
+    .repo-item {
+      background: #f8f9fa;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
     }
     
-    .warning-list ul {
-      margin-left: 20px;
+    .repo-name {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    
+    .repo-stars {
+      color: #f39c12;
     }
     
     .leaderboard {
@@ -231,52 +222,29 @@
       box-shadow: 0 10px 40px rgba(0,0,0,0.1);
     }
     
-    .leaderboard h2 {
-      margin-bottom: 20px;
-    }
-    
     .leaderboard-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px;
+      padding: 12px;
       border-bottom: 1px solid #f0f0f0;
     }
     
-    .leaderboard-rank {
-      font-weight: bold;
-      width: 50px;
-    }
-    
-    .leaderboard-user {
-      flex: 1;
-    }
-    
-    .leaderboard-score {
-      font-weight: bold;
-      color: #667eea;
-    }
-    
-    .spammer-tag {
+    .error {
       background: #ff4757;
       color: white;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      margin-left: 10px;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 20px;
     }
     
     @media (max-width: 768px) {
-      .input-group {
-        flex-direction: column;
-      }
-      
       .profile-header {
         flex-direction: column;
         text-align: center;
       }
       
-      .score-section {
+      .input-group {
         flex-direction: column;
       }
     }
@@ -294,20 +262,18 @@
         <input type="text" id="username" placeholder="Enter GitHub username (e.g., vish731)" />
         <button onclick="scanBuilder()">🔍 Scan Builder</button>
       </div>
-      <div id="loading" class="loading" style="display: none;">Scanning GitHub activity...</div>
+      <div id="loading" class="loading" style="display: none;">⏳ Scanning GitHub activity...</div>
     </div>
     
     <div id="result" class="result-card"></div>
     
     <div class="leaderboard">
       <h2>🏆 Builder Leaderboard</h2>
-      <div id="leaderboard">Loading...</div>
+      <div id="leaderboard">No builders scanned yet. Start scanning!</div>
     </div>
   </div>
   
   <script>
-    let currentLeaderboard = [];
-    
     async function scanBuilder() {
       const username = document.getElementById('username').value.trim();
       if (!username) {
@@ -327,13 +293,13 @@
         
         if (data.success) {
           displayResult(data.builder);
-          currentLeaderboard = data.leaderboard;
-          displayLeaderboard(currentLeaderboard);
+          displayLeaderboard(data.leaderboard);
         } else {
-          showError(data.error);
+          showError(data.error || 'User not found');
         }
       } catch (error) {
-        showError('Network error. Make sure the server is running.');
+        console.error('Error:', error);
+        showError('Cannot connect to server. Make sure server is running on port 3000');
       } finally {
         loading.style.display = 'none';
       }
@@ -341,88 +307,72 @@
     
     function displayResult(builder) {
       const resultDiv = document.getElementById('result');
-      
-      const isSpammer = builder.isSpammer;
-      const badgeClass = isSpammer ? 'spammer-badge' : 'real-builder-badge';
-      const badgeText = isSpammer ? '⚠️ Spammer Detected' : '✅ Real Builder';
+      const badgeClass = builder.isRealBuilder ? 'real-builder' : 'fake-builder';
+      const badgeText = builder.isRealBuilder ? '✅ REAL BUILDER' : '⚠️ NOT A BUILDER';
       
       resultDiv.innerHTML = `
         <div class="profile-header">
-          <img src="${builder.avatar}" alt="${builder.username}" class="avatar">
+          <img src="${builder.avatar}" class="avatar">
           <div class="profile-info">
             <h2>${builder.name}</h2>
             <div class="username">@${builder.username}</div>
-            <div class="${badgeClass}">${badgeText}</div>
+            <div class="badge ${badgeClass}">${badgeText}</div>
             ${builder.bio ? `<p style="margin-top: 10px;">${builder.bio}</p>` : ''}
           </div>
         </div>
         
-        <div class="score-section">
-          <div class="score-card">
-            <div class="score-number">${builder.builderScore}</div>
-            <div>Builder Score</div>
-          </div>
-          <div class="score-card" style="background: ${isSpammer ? '#ff4757' : '#00b894'}">
-            <div class="score-number">${isSpammer ? builder.spamConfidence + '%' : 'Clean'}</div>
-            <div>${isSpammer ? 'Spam Confidence' : 'Trust Score'}</div>
-          </div>
+        <div class="score-card">
+          <div class="score-number">${builder.builderScore}</div>
+          <div>Builder Score / 100</div>
         </div>
         
         <div class="metrics-grid">
           <div class="metric-card">
-            <div class="metric-title">📊 Quality Repos</div>
-            <div class="metric-value">${builder.scoreDetails.qualityRepos.count}</div>
-            <small>Score: ${builder.scoreDetails.qualityRepos.score}/${builder.scoreDetails.qualityRepos.maxScore}</small>
+            <div class="metric-value">${builder.stats.reposWithCode}</div>
+            <div>Repos with Code</div>
           </div>
           <div class="metric-card">
-            <div class="metric-title">⭐ Total Stars</div>
-            <div class="metric-value">${builder.scoreDetails.stars.total}</div>
-            <small>Score: ${builder.scoreDetails.stars.score}/${builder.scoreDetails.stars.maxScore}</small>
+            <div class="metric-value">${builder.stats.totalCommits}</div>
+            <div>Total Commits</div>
           </div>
           <div class="metric-card">
-            <div class="metric-title">🔄 Active Repos</div>
-            <div class="metric-value">${builder.scoreDetails.activeRepos.count}</div>
-            <small>Score: ${builder.scoreDetails.activeRepos.score}/${builder.scoreDetails.activeRepos.maxScore}</small>
+            <div class="metric-value">${builder.stats.recentCommits}</div>
+            <div>Recent Commits (90d)</div>
           </div>
           <div class="metric-card">
-            <div class="metric-title">💻 Total Commits</div>
-            <div class="metric-value">${builder.commits.totalCommits}</div>
-            <small>Recent: ${builder.commits.recentCommits} commits (30 days)</small>
+            <div class="metric-value">${builder.stats.totalStars}</div>
+            <div>Total Stars</div>
           </div>
           <div class="metric-card">
-            <div class="metric-title">👥 Followers</div>
             <div class="metric-value">${builder.followers}</div>
-            <small>Following: ${builder.following}</small>
+            <div>Followers</div>
           </div>
           <div class="metric-card">
-            <div class="metric-title">📅 Account Age</div>
-            <div class="metric-value">${builder.scoreDetails.accountAge.years} years</div>
-            <small>Created: ${new Date(builder.accountCreated).toLocaleDateString()}</small>
+            <div class="metric-value">${builder.stats.totalRepos}</div>
+            <div>Total Repos</div>
           </div>
         </div>
         
-        ${isSpammer ? `
-          <div class="warning-list">
-            <h4>🚨 Spam Indicators Found:</h4>
-            <ul>
-              ${builder.spamIndicators.map(indicator => `<li>${indicator}</li>`).join('')}
-            </ul>
-          </div>
-        ` : ''}
+        <div class="reasons-list">
+          <strong>📊 Analysis:</strong>
+          ${builder.reasons.map(r => `<div>${r}</div>`).join('')}
+        </div>
         
-        ${builder.topRepos.length > 0 ? `
-          <div style="margin-top: 20px;">
-            <h3>🏆 Top Repositories</h3>
-            ${builder.topRepos.map(repo => `
-              <div class="metric-card" style="margin-top: 10px;">
-                <div class="metric-title">
-                  <a href="${repo.url}" target="_blank">${repo.name}</a>
-                </div>
-                <div>${repo.description || 'No description'}</div>
-                <small>⭐ ${repo.stars} stars | 🍴 ${repo.forks} forks | ${repo.language || 'No language'}</small>
+        ${builder.repos.length > 0 ? `
+          <h3>📁 Repositories</h3>
+          ${builder.repos.map(repo => `
+            <div class="repo-item">
+              <div class="repo-name">
+                <a href="${repo.url}" target="_blank">${repo.name}</a>
+                ${repo.hasCode ? ' ✅' : ' ❌'}
               </div>
-            `).join('')}
-          </div>
+              <div>${repo.description || 'No description'}</div>
+              <small>
+                ${repo.hasCode ? `📄 ${repo.fileCount} code files` : '⚠️ Empty repository'}
+                ${repo.stars > 0 ? ` | ⭐ ${repo.stars} stars` : ''}
+              </small>
+            </div>
+          `).join('')}
         ` : ''}
       `;
       
@@ -433,36 +383,27 @@
       const leaderboardDiv = document.getElementById('leaderboard');
       
       if (!builders || builders.length === 0) {
-        leaderboardDiv.innerHTML = '<p>No builders scanned yet. Start scanning!</p>';
+        leaderboardDiv.innerHTML = 'No builders scanned yet. Start scanning!';
         return;
       }
       
-      leaderboardDiv.innerHTML = `
-        ${builders.map((builder, index) => `
-          <div class="leaderboard-item">
-            <div class="leaderboard-rank">#${index + 1}</div>
-            <div class="leaderboard-user">
-              @${builder.username}
-              ${builder.isSpammer ? '<span class="spammer-tag">Spammer</span>' : ''}
-            </div>
-            <div class="leaderboard-score">${builder.score}</div>
-          </div>
-        `).join('')}
-      `;
+      leaderboardDiv.innerHTML = builders.map((b, i) => `
+        <div class="leaderboard-item">
+          <span>#${i+1}</span>
+          <span><strong>@${b.username}</strong></span>
+          <span>Score: <strong>${b.score}</strong></span>
+          <span>${b.isRealBuilder ? '✅' : '❌'}</span>
+        </div>
+      `).join('');
     }
     
     function showError(message) {
       const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = `
-        <div style="background: #ff4757; color: white; padding: 20px; border-radius: 10px;">
-          <h3>❌ Error</h3>
-          <p>${message}</p>
-        </div>
-      `;
+      resultDiv.innerHTML = `<div class="error">❌ Error: ${message}</div>`;
       resultDiv.classList.add('show');
     }
     
-    // Load initial leaderboard
+    // Load leaderboard on page load
     async function loadLeaderboard() {
       try {
         const response = await fetch('/api/leaderboard');
@@ -475,14 +416,11 @@
       }
     }
     
-    // Load leaderboard on page load
     loadLeaderboard();
     
-    // Allow Enter key to search
+    // Enter key support
     document.getElementById('username').addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        scanBuilder();
-      }
+      if (e.key === 'Enter') scanBuilder();
     });
   </script>
 </body>
