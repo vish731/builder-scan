@@ -3,310 +3,403 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BuilderScan - Real Builder Detection</title>
+  <title>BASE Builder Scan</title>
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(145deg, #0A0C12 0%, #0F1119 100%);
       min-height: 100vh;
-      padding: 20px;
+      color: #EFF2F5;
     }
-    
+
+    /* Base brand colors */
+    :root {
+      --base-blue: #0052FF;
+      --base-blue-glow: rgba(0, 82, 255, 0.3);
+      --base-green: #00D1B2;
+      --base-green-glow: rgba(0, 209, 178, 0.2);
+      --dark-bg: #0A0C12;
+      --card-bg: #14161F;
+      --border-light: #252836;
+    }
+
     .container {
-      max-width: 1200px;
+      max-width: 1400px;
       margin: 0 auto;
+      padding: 2rem;
     }
-    
+
+    /* Header */
     .header {
-      text-align: center;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 3rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--base-blue), var(--base-green));
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      font-weight: bold;
       color: white;
-      margin-bottom: 40px;
+      box-shadow: 0 0 20px var(--base-blue-glow);
     }
-    
-    .header h1 {
-      font-size: 3rem;
-      margin-bottom: 10px;
+
+    .logo-text {
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--base-blue), var(--base-green));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: -0.5px;
     }
-    
-    .header .subtitle {
-      font-size: 1.2rem;
-      opacity: 0.9;
+
+    .tagline {
+      color: #8A8F9E;
+      font-size: 0.9rem;
+      margin-left: 0.5rem;
     }
-    
+
+    /* Scan Card */
     .scan-card {
-      background: white;
-      border-radius: 20px;
-      padding: 30px;
-      margin-bottom: 40px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      background: var(--card-bg);
+      border: 1px solid var(--border-light);
+      border-radius: 24px;
+      padding: 2rem;
+      margin-bottom: 2.5rem;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
     }
-    
+
     .input-group {
       display: flex;
-      gap: 15px;
-      margin-bottom: 15px;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
     }
-    
-    .button-group {
-      display: flex;
-      gap: 15px;
-    }
-    
+
     input {
       flex: 1;
-      padding: 15px 20px;
+      padding: 1rem 1.2rem;
+      background: #1E2029;
+      border: 1px solid var(--border-light);
+      border-radius: 16px;
       font-size: 1rem;
-      border: 2px solid #e0e0e0;
-      border-radius: 12px;
-      transition: all 0.3s;
+      color: #EFF2F5;
+      transition: all 0.2s;
     }
-    
+
     input:focus {
       outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+      border-color: var(--base-blue);
+      box-shadow: 0 0 0 3px var(--base-blue-glow);
     }
-    
+
     button {
-      padding: 15px 30px;
-      font-size: 1rem;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
+      padding: 1rem 2rem;
+      background: linear-gradient(135deg, var(--base-blue), var(--base-green));
       border: none;
-      border-radius: 12px;
+      border-radius: 16px;
+      font-weight: 600;
+      font-size: 1rem;
+      color: white;
       cursor: pointer;
-      transition: all 0.3s;
-      font-weight: bold;
+      transition: transform 0.2s, box-shadow 0.2s;
     }
-    
+
     button:hover {
       transform: translateY(-2px);
-      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+      box-shadow: 0 8px 20px var(--base-blue-glow);
     }
-    
+
     .test-btn {
-      background: #95a5a6;
+      background: #2A2C3A;
+      background: linear-gradient(135deg, #2A2C3A, #1F212E);
     }
-    
+
     .loading {
       text-align: center;
-      padding: 20px;
-      font-size: 1.2rem;
-      color: #667eea;
-      margin-top: 20px;
+      padding: 1rem;
+      color: var(--base-green);
     }
-    
+
+    /* Result Card */
     .result-card {
-      background: white;
-      border-radius: 20px;
-      padding: 30px;
-      margin-bottom: 40px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      background: var(--card-bg);
+      border: 1px solid var(--border-light);
+      border-radius: 24px;
+      padding: 2rem;
+      margin-bottom: 2.5rem;
       display: none;
     }
-    
+
     .result-card.show {
       display: block;
-      animation: slideIn 0.5s ease;
+      animation: fadeInUp 0.4s ease;
     }
-    
-    @keyframes slideIn {
+
+    @keyframes fadeInUp {
       from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(10px);
       }
       to {
         opacity: 1;
         transform: translateY(0);
       }
     }
-    
+
     .profile-header {
       display: flex;
-      gap: 25px;
-      margin-bottom: 30px;
-      padding-bottom: 20px;
-      border-bottom: 2px solid #f0f0f0;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border-light);
+      flex-wrap: wrap;
     }
-    
+
     .avatar {
-      width: 100px;
-      height: 100px;
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
+      border: 2px solid var(--base-green);
       object-fit: cover;
     }
-    
+
     .profile-info h2 {
       font-size: 1.8rem;
-      margin-bottom: 5px;
+      margin-bottom: 0.25rem;
     }
-    
-    .profile-info .username {
-      color: #666;
-      margin-bottom: 10px;
+
+    .username {
+      color: #8A8F9E;
+      margin-bottom: 0.5rem;
     }
-    
+
     .tier-badge {
       display: inline-block;
-      padding: 8px 16px;
+      padding: 6px 14px;
       border-radius: 30px;
-      font-weight: bold;
-      margin-top: 10px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
     }
-    
+
     .score-section {
       display: flex;
-      gap: 20px;
-      margin: 30px 0;
+      gap: 1.5rem;
+      margin: 2rem 0;
+      flex-wrap: wrap;
     }
-    
+
     .score-card {
       flex: 1;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 25px;
-      border-radius: 15px;
+      background: linear-gradient(135deg, #1E2029, #1A1C24);
+      border-radius: 20px;
+      padding: 1.5rem;
       text-align: center;
+      border: 1px solid var(--border-light);
     }
-    
+
     .score-number {
-      font-size: 4rem;
-      font-weight: bold;
+      font-size: 3.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--base-blue), var(--base-green));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin-bottom: 0.5rem;
     }
-    
+
     .metrics-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-      margin: 20px 0;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
     }
-    
+
     .metric-card {
-      background: #f8f9fa;
-      padding: 15px;
-      border-radius: 12px;
+      background: #1E2029;
+      border-radius: 16px;
+      padding: 1rem;
       text-align: center;
-      border-left: 4px solid #667eea;
+      border: 1px solid var(--border-light);
     }
-    
+
     .metric-value {
       font-size: 1.8rem;
-      font-weight: bold;
-      color: #667eea;
+      font-weight: 700;
+      color: var(--base-green);
     }
-    
+
     .breakdown-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 15px;
-      margin: 20px 0;
-      padding: 20px;
-      background: #f8f9fa;
-      border-radius: 12px;
+      gap: 1rem;
+      margin: 1.5rem 0;
+      padding: 1rem;
+      background: #1E2029;
+      border-radius: 20px;
     }
-    
+
     .breakdown-item {
       text-align: center;
     }
-    
+
     .breakdown-label {
       font-size: 0.8rem;
-      color: #666;
+      color: #8A8F9E;
     }
-    
+
     .breakdown-value {
-      font-size: 1.3rem;
-      font-weight: bold;
-      color: #333;
+      font-size: 1.2rem;
+      font-weight: 600;
     }
-    
+
+    .analysis-message {
+      background: rgba(0, 209, 178, 0.1);
+      border-left: 4px solid var(--base-green);
+      padding: 1rem;
+      border-radius: 12px;
+      margin: 1.5rem 0;
+    }
+
     .repo-list {
-      margin-top: 20px;
+      margin-top: 1.5rem;
     }
-    
+
     .repo-item {
-      background: #f8f9fa;
-      padding: 15px;
-      margin: 10px 0;
-      border-radius: 10px;
+      background: #1E2029;
+      padding: 1rem;
+      margin: 0.75rem 0;
+      border-radius: 12px;
       border-left: 4px solid;
     }
-    
+
     .repo-valid {
-      border-left-color: #00b894;
+      border-left-color: var(--base-green);
     }
-    
+
     .repo-spam {
-      border-left-color: #ff4757;
+      border-left-color: #FF4D4D;
     }
-    
+
     .repo-empty {
-      border-left-color: #95a5a6;
+      border-left-color: #8A8F9E;
     }
-    
+
     .repo-name {
-      font-weight: bold;
-      margin-bottom: 5px;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
     }
-    
-    .repo-status {
-      font-size: 0.85rem;
-      color: #666;
-    }
-    
-    .analysis-message {
-      background: #e8f5e9;
-      padding: 20px;
-      border-radius: 12px;
-      margin: 20px 0;
-      border-left: 4px solid #00b894;
-    }
-    
+
+    /* Leaderboard Table */
     .leaderboard {
-      background: white;
-      border-radius: 20px;
-      padding: 30px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      background: var(--card-bg);
+      border: 1px solid var(--border-light);
+      border-radius: 24px;
+      padding: 2rem;
+      overflow-x: auto;
     }
-    
-    .leaderboard-item {
+
+    .leaderboard h2 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding: 12px;
-      border-bottom: 1px solid #f0f0f0;
+      gap: 0.5rem;
     }
-    
-    .error {
-      background: #ff4757;
-      color: white;
-      padding: 15px;
-      border-radius: 10px;
-      margin-top: 20px;
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
     }
-    
+
+    th, td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    th {
+      color: #8A8F9E;
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+
+    tr:hover {
+      background: #1E2029;
+    }
+
+    .profile-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .profile-cell img {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .score-badge {
+      background: linear-gradient(135deg, var(--base-blue), var(--base-green));
+      padding: 4px 12px;
+      border-radius: 30px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      display: inline-block;
+    }
+
+    .tier-badge-small {
+      padding: 4px 10px;
+      border-radius: 30px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      margin-left: 8px;
+    }
+
     @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
       .profile-header {
         flex-direction: column;
+        align-items: center;
         text-align: center;
       }
-      
-      .input-group, .button-group {
+      .input-group {
         flex-direction: column;
       }
-      
-      .score-section {
-        flex-direction: column;
-      }
-      
       .breakdown-grid {
         grid-template-columns: repeat(2, 1fr);
+      }
+      th, td {
+        padding: 0.75rem;
+        font-size: 0.8rem;
       }
     }
   </style>
@@ -314,91 +407,87 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>🏗️ BuilderScan</h1>
-      <div class="subtitle">Detect Real Builders • Score GitHub Activity • Like BaseName</div>
+      <div class="logo-area">
+        <div class="logo-icon">⚡</div>
+        <div>
+          <div class="logo-text">BASE Builder Scan</div>
+          <div class="tagline">Discover & score real builders</div>
+        </div>
+      </div>
     </div>
-    
+
     <div class="scan-card">
       <div class="input-group">
-        <input type="text" id="username" placeholder="Enter GitHub username (e.g., octocat, torvalds, vish731)" />
+        <input type="text" id="username" placeholder="Enter GitHub username (e.g., vish731, octocat)" />
       </div>
-      <div class="button-group">
+      <div class="input-group" style="margin-top: 0.5rem;">
         <button onclick="scanBuilder()">🔍 Scan Builder</button>
-        <button onclick="testUser()" class="test-btn">🔍 Test User (Check if exists)</button>
+        <button onclick="testUser()" class="test-btn">🔍 Check User</button>
       </div>
-      <div id="loading" class="loading" style="display: none;">⏳ Scanning GitHub activity... (this may take a few seconds)</div>
+      <div id="loading" class="loading" style="display: none;">⏳ Analyzing GitHub activity...</div>
     </div>
-    
+
     <div id="result" class="result-card"></div>
-    
+
     <div class="leaderboard">
-      <h2>🏆 Builder Leaderboard</h2>
+      <h2>🏆 Top Builders</h2>
       <div id="leaderboard">No builders scanned yet. Start scanning!</div>
     </div>
   </div>
-  
+
   <script>
     async function testUser() {
       const username = document.getElementById('username').value.trim();
       if (!username) {
-        alert('Please enter a GitHub username to test');
+        alert('Enter a GitHub username');
         return;
       }
-      
       const loading = document.getElementById('loading');
       loading.style.display = 'block';
-      
       try {
         const response = await fetch(`/api/test/${username}`);
         const data = await response.json();
-        
         if (data.success) {
-          alert(`✅ User Found!\n\nUsername: ${data.user.login}\nName: ${data.user.name || 'Not set'}\nPublic Repos: ${data.user.public_repos}\nFollowers: ${data.user.followers}\nAccount Created: ${new Date(data.user.created_at).toLocaleDateString()}`);
+          alert(`✅ User found!\n\nUsername: ${data.user.login}\nName: ${data.user.name || 'Not set'}\nRepos: ${data.user.public_repos}\nFollowers: ${data.user.followers}`);
         } else {
           alert(`❌ ${data.error}`);
         }
       } catch (error) {
-        alert('Error testing user. Make sure server is running on port 3000');
+        alert('Server error. Is the backend running?');
       } finally {
         loading.style.display = 'none';
       }
     }
-    
+
     async function scanBuilder() {
       const username = document.getElementById('username').value.trim();
       if (!username) {
-        alert('Please enter a GitHub username');
+        alert('Enter a GitHub username');
         return;
       }
-      
       const loading = document.getElementById('loading');
       const resultDiv = document.getElementById('result');
-      
       loading.style.display = 'block';
       resultDiv.classList.remove('show');
-      
       try {
         const response = await fetch(`/api/scan/${username}`);
         const data = await response.json();
-        
         if (data.success) {
           displayResult(data.builder);
           displayLeaderboard(data.leaderboard);
         } else {
-          showError(data.error || 'User not found');
+          showError(data.error);
         }
       } catch (error) {
-        console.error('Error:', error);
-        showError('Cannot connect to server. Make sure server is running on port 3000');
+        showError('Cannot connect to server. Make sure server is running.');
       } finally {
         loading.style.display = 'none';
       }
     }
-    
+
     function displayResult(builder) {
       const resultDiv = document.getElementById('result');
       const tier = builder.tier;
-      
       resultDiv.innerHTML = `
         <div class="profile-header">
           <img src="${builder.avatar}" class="avatar">
@@ -411,39 +500,36 @@
             ${builder.bio ? `<p style="margin-top: 10px;">${builder.bio}</p>` : ''}
           </div>
         </div>
-        
         <div class="score-section">
           <div class="score-card">
             <div class="score-number">${builder.builderScore}</div>
-            <div>Builder Score / 100</div>
+            <div>Builder Score</div>
           </div>
-          <div class="score-card" style="background: ${tier.color}">
+          <div class="score-card">
             <div class="score-number">${tier.emoji}</div>
             <div>${tier.name}</div>
           </div>
         </div>
-        
         <div class="analysis-message">
           <strong>📝 Analysis:</strong><br>
           ${builder.analysisMessage}
         </div>
-        
         <div class="metrics-grid">
           <div class="metric-card">
             <div class="metric-value">${builder.stats.codeRepos}</div>
-            <div>Valid Repos (with code)</div>
+            <div>Valid Repos</div>
           </div>
           <div class="metric-card">
             <div class="metric-value">${builder.stats.totalMeaningfulCommits}</div>
             <div>Meaningful Commits</div>
           </div>
           <div class="metric-card">
-            <div class="metric-value">${builder.stats.totalSpamCommits}</div>
-            <div>Spam Commits (Ignored)</div>
+            <div class="metric-value">${builder.stats.recentCommits}</div>
+            <div>Recent Commits (90d)</div>
           </div>
           <div class="metric-card">
             <div class="metric-value">${builder.stats.totalStars}</div>
-            <div>⭐ Total Stars</div>
+            <div>⭐ Stars</div>
           </div>
           <div class="metric-card">
             <div class="metric-value">${builder.followers}</div>
@@ -451,10 +537,9 @@
           </div>
           <div class="metric-card">
             <div class="metric-value">${builder.stats.accountAge}</div>
-            <div>📅 Account Age</div>
+            <div>Account Age</div>
           </div>
         </div>
-        
         <div class="breakdown-grid">
           <div class="breakdown-item">
             <div class="breakdown-label">Code Repos</div>
@@ -473,8 +558,7 @@
             <div class="breakdown-value">-${builder.scoreBreakdown.spamPenalty}</div>
           </div>
         </div>
-        
-        <h3>📁 Repository Analysis</h3>
+        <h3 style="margin-top: 1rem;">📁 Repositories</h3>
         <div class="repo-list">
           ${builder.repositories.map(repo => `
             <div class="repo-item repo-${repo.status}">
@@ -484,7 +568,7 @@
               </div>
               <div class="repo-status">
                 ${repo.status === 'valid' ? 
-                  `${repo.meaningfulCommits} meaningful commits • ${repo.codeFiles} code files • ⭐ ${repo.stars || 0} stars` : 
+                  `${repo.meaningfulCommits} meaningful commits • ${repo.codeFiles} code files • ⭐ ${repo.stars || 0}` : 
                   repo.reason || 'No meaningful activity'}
               </div>
               ${repo.description ? `<small>${repo.description}</small>` : ''}
@@ -492,49 +576,78 @@
           `).join('')}
         </div>
       `;
-      
       resultDiv.classList.add('show');
     }
-    
+
     function displayLeaderboard(builders) {
       const leaderboardDiv = document.getElementById('leaderboard');
-      
       if (!builders || builders.length === 0) {
         leaderboardDiv.innerHTML = 'No builders scanned yet. Start scanning!';
         return;
       }
-      
-      leaderboardDiv.innerHTML = builders.map((b, i) => `
-        <div class="leaderboard-item">
-          <span style="font-weight: bold;">#${i+1}</span>
-          <span><strong>@${b.username}</strong></span>
-          <span style="color: #667eea; font-weight: bold;">${b.score}/100</span>
-          <span>${b.tier}</span>
-        </div>
-      `).join('');
+      const getTierStyle = (score) => {
+        if (score >= 75) return { name: 'Legendary', color: '#00b894' };
+        if (score >= 50) return { name: 'Pro', color: '#3498db' };
+        if (score >= 25) return { name: 'Rising', color: '#f39c12' };
+        return { name: 'Ghost', color: '#95a5a6' };
+      };
+      const table = `
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Builder Profile</th>
+              <th>Main Role</th>
+              <th>Contributions (90d)</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${builders.map((b, i) => {
+              const tierInfo = getTierStyle(b.score);
+              const role = b.bio ? (b.bio.split('.')[0].substring(0, 40)) : 'Developer';
+              return `
+                <tr>
+                  <td>${i+1}</td>
+                  <td>
+                    <div class="profile-cell">
+                      <img src="${b.avatar}" alt="${b.username}">
+                      <span class="username">@${b.username}</span>
+                    </div>
+                  </td>
+                  <td>${role}</td>
+                  <td>${b.recentCommits || 0}</td>
+                  <td>
+                    <span class="score-badge">${b.score}</span>
+                    <span class="tier-badge-small" style="background: ${tierInfo.color}; color: white;">${tierInfo.name}</span>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+      leaderboardDiv.innerHTML = table;
     }
-    
+
     function showError(message) {
       const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = `<div class="error">❌ Error: ${message}</div>`;
+      resultDiv.innerHTML = `<div style="background: rgba(255, 77, 77, 0.1); border-left: 4px solid #FF4D4D; padding: 1rem; border-radius: 12px;">❌ Error: ${message}</div>`;
       resultDiv.classList.add('show');
     }
-    
+
     // Load leaderboard on page load
     async function loadLeaderboard() {
       try {
         const response = await fetch('/api/leaderboard');
         const data = await response.json();
-        if (data.success) {
-          displayLeaderboard(data.builders);
-        }
+        if (data.success) displayLeaderboard(data.builders);
       } catch (error) {
         console.error('Error loading leaderboard:', error);
       }
     }
-    
     loadLeaderboard();
-    
+
     // Enter key support
     document.getElementById('username').addEventListener('keypress', function(e) {
       if (e.key === 'Enter') scanBuilder();
