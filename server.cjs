@@ -8,7 +8,7 @@ const PORT = 3000;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
 let builders = [];
 
@@ -122,7 +122,7 @@ async function getMeaningfulCommits(username, repo) {
     return { meaningfulCommits, spamCommits, totalCommits: commitsRes.data.length };
     
   } catch (error) {
-    console.log(`    ⚠️ Could not fetch commits for ${repo.name}: ${error.message}`);
+    console.log(`    ⚠️ Could not fetch commits for ${repo.name}`);
     return { meaningfulCommits: 0, spamCommits: 0, totalCommits: 0 };
   }
 }
@@ -142,28 +142,27 @@ async function analyzeRepoContent(username, repoName) {
     
     const files = contentsRes.data;
     const codeFiles = [];
-    const docFiles = [];
     
     for (const file of files) {
       const ext = path.extname(file.name).toLowerCase();
       const name = file.name.toLowerCase();
       
-      if (name.includes('readme') || name.includes('license')) {
-        docFiles.push(file.name);
-      } else if (['.js', '.py', '.java', '.cpp', '.c', '.go', '.rs', '.ts', '.sol', '.rb', '.php', '.jsx', '.tsx', '.vue', '.swift', '.kt', '.cs', '.html', '.css', '.json'].includes(ext)) {
-        codeFiles.push(file.name);
+      if (!name.includes('readme') && !name.includes('license') && !name.includes('.gitignore')) {
+        const codeExtensions = ['.js', '.py', '.java', '.cpp', '.c', '.go', '.rs', '.ts', '.sol', '.rb', '.php', '.jsx', '.tsx', '.vue', '.swift', '.kt', '.cs', '.html', '.css', '.json'];
+        if (codeExtensions.includes(ext)) {
+          codeFiles.push(file.name);
+        }
       }
     }
     
     return {
       hasCode: codeFiles.length > 0,
       codeFiles: codeFiles,
-      docFiles: docFiles,
       totalFiles: files.length
     };
     
   } catch (error) {
-    return { hasCode: false, codeFiles: [], docFiles: [], totalFiles: 0 };
+    return { hasCode: false, codeFiles: [], totalFiles: 0 };
   }
 }
 
@@ -174,14 +173,10 @@ async function calculateBuilderScore(username, userData, repos) {
     codeRepos: 0,
     totalMeaningfulCommits: 0,
     totalSpamCommits: 0,
-    stars: 0,
-    forks: 0,
-    accountAge: 0
+    stars: 0
   };
   
   const repoAnalysis = [];
-  
-  // Limit to first 20 repos to avoid timeout
   const reposToAnalyze = repos.slice(0, 20);
   
   for (const repo of reposToAnalyze) {
@@ -196,8 +191,7 @@ async function calculateBuilderScore(username, userData, repos) {
       repoAnalysis.push({
         name: repo.name,
         status: 'spam',
-        reason: spamCheck.reason,
-        hasCode: false
+        reason: spamCheck.reason
       });
       continue;
     }
@@ -209,14 +203,11 @@ async function calculateBuilderScore(username, userData, repos) {
       details.totalMeaningfulCommits += commits.meaningfulCommits;
       details.totalSpamCommits += commits.spamCommits;
       details.stars += repo.stargazers_count;
-      details.forks += repo.forks_count;
       
       repoAnalysis.push({
         name: repo.name,
         status: 'valid',
         meaningfulCommits: commits.meaningfulCommits,
-        spamCommits: commits.spamCommits,
-        hasCode: content.hasCode,
         codeFiles: content.codeFiles.length,
         stars: repo.stargazers_count,
         description: repo.description
@@ -225,8 +216,7 @@ async function calculateBuilderScore(username, userData, repos) {
       repoAnalysis.push({
         name: repo.name,
         status: 'empty',
-        reason: 'No meaningful commits or code',
-        hasCode: false
+        reason: 'No meaningful commits or code'
       });
     }
     
@@ -262,7 +252,6 @@ async function calculateBuilderScore(username, userData, repos) {
   score += starScore;
   
   const accountAgeDays = (Date.now() - new Date(userData.created_at)) / (1000 * 60 * 60 * 24);
-  details.accountAge = accountAgeDays;
   let ageScore = 0;
   if (accountAgeDays > 730) ageScore = 10;
   else if (accountAgeDays > 365) ageScore = 8;
@@ -301,68 +290,19 @@ app.get('/api/scan/:username', async (req, res) => {
     console.log(`\n🔍 SCANNING: @${username}`);
     console.log('═'.repeat(50));
     
-    // Check if username is valid
-    if (!username || username.trim() === '') {
-      return res.status(400).json({
-        success: false,
-        error: 'Please enter a valid GitHub username'
-      });
-    }
-    
-    // Get user data with proper headers
     const userRes = await axios.get(`https://api.github.com/users/${username}`, {
-      headers: {
-        'User-Agent': 'BuilderScan-App',
-        'Accept': 'application/vnd.github.v3+json'
-      }
+      headers: { 'User-Agent': 'BuilderScan-App' }
     });
     
     const user = userRes.data;
-    
-    if (!user || !user.login) {
-      return res.status(404).json({
-        success: false,
-        error: `User "${username}" not found on GitHub`
-      });
-    }
-    
     console.log(`👤 Found: ${user.name || user.login}`);
-    console.log(`📁 Public repos: ${user.public_repos}`);
     
-    // Get repositories
-    const reposRes = await axios.get(`https://api.github.com/users/${username}/repos?per_page=100&sort=updated`, {
-      headers: {
-        'User-Agent': 'BuilderScan-App'
-      }
+    const reposRes = await axios.get(`https://api.github.com/users/${username}/repos?per_page=100`, {
+      headers: { 'User-Agent': 'BuilderScan-App' }
     });
     
     const allRepos = reposRes.data;
     console.log(`📦 Fetched ${allRepos.length} repositories`);
-    
-    if (allRepos.length === 0) {
-      return res.json({
-        success: true,
-        builder: {
-          username: user.login,
-          name: user.name || user.login,
-          avatar: user.avatar_url,
-          bio: user.bio || '',
-          builderScore: 0,
-          tier: getBuilderTier(0),
-          stats: {
-            codeRepos: 0,
-            totalMeaningfulCommits: 0,
-            totalSpamCommits: 0,
-            totalStars: 0,
-            accountAge: '0 months'
-          },
-          analysisMessage: "No public repositories found. Start building to increase your score!"
-        },
-        leaderboard: builders
-      });
-    }
-    
-    console.log(`🔍 Analyzing each repo for real code...\n`);
     
     const scoreData = await calculateBuilderScore(username, user, allRepos);
     const tier = getBuilderTier(scoreData.score);
@@ -372,41 +312,30 @@ app.get('/api/scan/:username', async (req, res) => {
       name: user.name || user.login,
       avatar: user.avatar_url,
       bio: user.bio || '',
-      location: user.location || '',
       followers: user.followers,
       following: user.following,
-      accountCreated: user.created_at,
-      
       builderScore: scoreData.score,
       tier: tier,
-      
       stats: {
         codeRepos: scoreData.details.codeRepos,
         totalMeaningfulCommits: scoreData.details.totalMeaningfulCommits,
         totalSpamCommits: scoreData.details.totalSpamCommits,
         totalStars: scoreData.details.stars,
-        accountAge: Math.floor(scoreData.details.accountAge / 30) + ' months'
+        accountAge: Math.floor((Date.now() - new Date(user.created_at)) / (1000 * 60 * 60 * 24 * 30)) + ' months'
       },
-      
       scoreBreakdown: scoreData.breakdown,
       repositories: scoreData.repoAnalysis,
-      
-      analysisMessage: getAnalysisMessage(scoreData.score, scoreData.details)
+      analysisMessage: scoreData.score >= 50 ? "Good builder!" : "Needs more activity"
     };
     
     builders.unshift({
       username: user.login,
       score: scoreData.score,
-      tier: tier.name,
       timestamp: Date.now()
     });
     builders = builders.slice(0, 20);
     
-    console.log(`\n📊 FINAL SCORE: ${scoreData.score}/100`);
-    console.log(`🏆 TIER: ${tier.name}`);
-    console.log(`📝 Valid repos: ${scoreData.details.codeRepos}`);
-    console.log(`💻 Meaningful commits: ${scoreData.details.totalMeaningfulCommits}`);
-    console.log('═'.repeat(50));
+    console.log(`📊 FINAL SCORE: ${scoreData.score}/100`);
     
     res.json({
       success: true,
@@ -415,38 +344,13 @@ app.get('/api/scan/:username', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Error details:', error.response?.data || error.message);
-    
-    if (error.response?.status === 404) {
-      res.status(404).json({
-        success: false,
-        error: `User "${req.params.username}" not found on GitHub. Please check the username and try again.`
-      });
-    } else if (error.response?.status === 403) {
-      res.status(429).json({
-        success: false,
-        error: 'GitHub API rate limit exceeded. Please wait a minute and try again.'
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        error: error.response?.data?.message || error.message || 'Failed to fetch user data'
-      });
-    }
+    console.error('Error:', error.message);
+    res.status(404).json({
+      success: false,
+      error: `User "${username}" not found`
+    });
   }
 });
-
-function getAnalysisMessage(score, details) {
-  if (score >= 75) {
-    return `🎉 Exceptional developer! ${details.codeRepos} high-quality repos with ${details.totalMeaningfulCommits} meaningful commits. Community loves your work (${details.stars} stars)!`;
-  } else if (score >= 50) {
-    return `💪 Strong builder! ${details.codeRepos} active repos with real code. Keep shipping great work!`;
-  } else if (score >= 25) {
-    return `🌱 You're on your way! Started with ${details.codeRepos} repos. Focus on consistent commits to level up.`;
-  } else {
-    return `👻 Low activity detected. Start building real projects with actual code commits to increase your score.`;
-  }
-}
 
 app.get('/api/leaderboard', (req, res) => {
   res.json({ success: true, builders });
@@ -454,36 +358,25 @@ app.get('/api/leaderboard', (req, res) => {
 
 app.get('/api/test/:username', async (req, res) => {
   const { username } = req.params;
-  
   try {
     const response = await axios.get(`https://api.github.com/users/${username}`, {
       headers: { 'User-Agent': 'BuilderScan-App' }
     });
-    
-    res.json({
-      success: true,
-      user: response.data,
-      message: `✅ User "${username}" exists on GitHub!`
-    });
+    res.json({ success: true, user: response.data });
   } catch (error) {
-    res.json({
-      success: false,
-      error: `❌ User "${username}" not found on GitHub`
-    });
+    res.json({ success: false, error: 'User not found' });
   }
 });
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// SIMPLE FIX FOR SERVING HTML
+app.get('/', (req, res) => {
+  res.sendFile('index.html', { root: path.join(__dirname, 'public') });
+});
+
+app.get('/index.html', (req, res) => {
+  res.sendFile('index.html', { root: path.join(__dirname, 'public') });
 });
 
 app.listen(PORT, () => {
-  console.log(`
-  ═══════════════════════════════════════════
-  🏗️  BUILDER SCAN AGENT (Like BaseName)
-  ═══════════════════════════════════════════
-  📡 Server: http://localhost:${PORT}
-  🔍 Test a user: http://localhost:${PORT}/api/test/username
-  ═══════════════════════════════════════════
-  `);
+  console.log(`\n🏗️ BuilderScan Server Running at http://localhost:${PORT}\n`);
 });
