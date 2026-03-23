@@ -14,7 +14,7 @@ let builders = [];
 
 // ============ BUILDER TIERS ============
 const getBuilderTier = (score) => {
-  if (score >= 75) {
+  if (score >= 73) {
     return {
       name: "🏆 LEGENDARY BUILDER",
       emoji: "👑",
