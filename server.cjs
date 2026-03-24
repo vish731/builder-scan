@@ -37,7 +37,7 @@ const getBuilderTier = (score) => {
     };
   } else {
     return {
-      name: "👻 GHOST BUILDER",
+      name: " GHOST BUILDER",
       emoji: "💀",
       color: "#95a5a6",
       description: "Inactive or spam activity detected"
@@ -122,7 +122,7 @@ async function getMeaningfulCommits(username, repo) {
     return { meaningfulCommits, spamCommits, totalCommits: commitsRes.data.length };
     
   } catch (error) {
-    console.log(`    ⚠️ Could not fetch commits for ${repo.name}`);
+    console.log(`   ⚠️ Could not fetch commits for ${repo.name}`);
     return { meaningfulCommits: 0, spamCommits: 0, totalCommits: 0 };
   }
 }
